@@ -1,14 +1,11 @@
 # san-juan
 
-A Clojure library designed to ... well, that part is up to you.
+Implementation of a game engine for the card game San Juan.
 
-## Usage
-
-FIXME
 
 ## License
 
-Copyright © 2019 FIXME
+Copyright © 2019 andrew@alphajuliet.com
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at
