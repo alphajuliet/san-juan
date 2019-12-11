@@ -4,9 +4,22 @@
 (ns san-juan.state
   (:require [clojure.pprint :as pp]))
 
+;;-----------------------
+;; Utilities
+
+(defn enumerate-cards
+  "For each card in the given deck, add `count` copies of `name`, and concatenate into a single list."
+  [d]
+  (reduce
+   (fn [accum element]
+     (into accum (repeat (:count element) (:name element))))
+   [] d))
+
+;;-----------------------
+;; Define a card
 (defrecord Card [name building cost vp count])
 
-(def deck
+(def all-cards
   [; Production buildings
    (->Card :indigo-plant :production 1 1 10)
    (->Card :sugar-mill :production 2 1 8)
@@ -38,6 +51,21 @@
    (->Card :city-hall :violet 6 0 2)
    (->Card :triumphal-arch :violet 6 0 2)
    (->Card :palace :violet 6 0 2)])
+
+;; Default player state
+(defrecord Player [area
+                   hand
+                   chapel
+                   vp
+                   is-governor])
+
+;;-----------------------
+(defn empty-state
+  "Game state"
+  [nplayers]
+  {:deck (enumerate-cards all-cards)
+   :player (vec (repeat nplayers (->Player [] [] [] 0 false)))
+   :role nil })
 
 
 ;; The End
