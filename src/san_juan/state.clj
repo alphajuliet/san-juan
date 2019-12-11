@@ -2,7 +2,7 @@
 ;; andrewj 2019-12-11
 
 (ns san-juan.state
-  (:require [clojure.pprint :as pp]))
+  #_(:require [clojure.pprint :as pp]))
 
 ;;-----------------------
 ;; Utilities
@@ -63,9 +63,20 @@
 (defn empty-state
   "Game state"
   [nplayers]
+  {:pre [(<= 2 nplayers 4)]}
   {:deck (enumerate-cards all-cards)
    :player (vec (repeat nplayers (->Player [] [] [] 0 false)))
-   :role nil })
+   :role nil})
 
+;;-----------------------
+;; Accessors
+
+(defn player
+  "Access player n in a state."
+  [n state]
+  {:pre [(<= 0 n 3)]}
+  (-> state
+      :player
+      (nth n)))
 
 ;; The End
