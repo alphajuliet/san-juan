@@ -2,7 +2,7 @@
 ;; andrewj 2019-12-11
 
 (ns san-juan.state
-  #_(:require [clojure.pprint :as pp]))
+  (:require [lentes.core :as l]))
 
 ;;-----------------------
 ;; Utilities
@@ -56,27 +56,48 @@
 (defrecord Player [area
                    hand
                    chapel
-                   vp
-                   is-governor])
+                   role
+                   vp])
+
+(def all-roles
+  #{:builder :producer :trader :councillor :prospector})
 
 ;;-----------------------
+;; Define the State structure
+(defrecord State [deck     ;; the deck of unused cards
+                  discards ;; discard pile
+                  player   ;; player hand and their play area
+                  turn     ;; current turn number
+                  roles    ;; role cards remaining in this turn
+                  ])
+
 (defn empty-state
-  "Game state"
+  "Empty game state"
   [nplayers]
   {:pre [(<= 2 nplayers 4)]}
-  {:deck (enumerate-cards all-cards)
-   :player (vec (repeat nplayers (->Player [] [] [] 0 false)))
-   :role nil})
+  (map->State {:deck (reduce (fn [s e] (into s {(:name e), (:count e)})) {} all-cards)
+               :discards {}
+               :player (vec (repeat nplayers (map->Player {:area {}
+                                                           :hand {}
+                                                           :chapel {}
+                                                           :role nil
+                                                           :vp 0})))
+               :turn 0
+               :roles all-roles}))
 
 ;;-----------------------
-;; Accessors
+;; Lenses
 
-(defn player
-  "Access player n in a state."
-  [n state]
-  {:pre [(<= 0 n 3)]}
-  (-> state
-      :player
-      (nth n)))
+(def _deck (l/key :deck))
+
+(defn _player 
+  "Lens to key k of player n."
+  [n k]
+  (comp (l/key :player) (l/nth n) (l/key k)))
+
+(defn _player_hand 
+  "Lens to player p's hand card."
+  [n card]
+  (comp (_player n :hand) (l/key card)))
 
 ;; The End
