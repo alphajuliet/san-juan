@@ -24,27 +24,19 @@
        (l/put (comp (l/key :player) (l/nth p) (l/key :role)) r)))
 
 ;;-----------------------
-(defn play-card
-  "Play a card from a hand to an area."
-  ;; Card -> Integer -> State -> State
-  [card p state]
-  (->> state
-       (l/over (_player_hand p card) dec)))
-
-;;-----------------------
 (defn random-card
   "Pick a random card from a given pile."
-  ;; Map Card Integer -> Card
+  ;; Seq Card -> Card
   [cards]
   (first (shuffle cards)))
 
 (defn move-card
   "Move a card from one pile to another."
-  ;; Card -> Lens -> Lens -> State -> State
+  ;; forall a. Card -> Vector a -> Vector a -> State -> State
   [card _src _dest state]
-  (->> state
-       (l/over _src #(removev % card))
-       (l/over _dest #(conj % card))))
+  (-> state
+       (update-in _src #(removev % card))
+       (update-in _dest #(conj % card))))
 
 ;;-----------------------
 (defn deal-card
@@ -52,7 +44,7 @@
   ;; deal-card :: Integer -> State -> State
   [p state]
   (let [card (random-card (:deck state))]
-    (move-card card _deck (_player p :hand) state)))
+    (move-card card [:deck] [:player p :hand] state)))
 
 (defn deal-n-cards
   "Deal `n` random cards from the deck to the hand of player `p`."
@@ -79,7 +71,7 @@
        ;; Place an indigo plant in everyone's area
        (do-all-players
         (fn [st p]
-          (move-card :indigo-plant _deck (_player p :area) st)))
+          (move-card :indigo-plant [:deck] [:player p :area] st)))
 
        ;; Deal 4 cards to each player's hand
        (do-all-players
@@ -99,11 +91,11 @@
   ;; Pre-conditions:
   ;; - Must have card in hand
   ;; - If violet, the card cannot already have been played.
-  {:pre [(some #{building} (l/focus (_player p :hand) state))
+  {:pre [(some #{building} (get-in state [:player p :hand]))
          (or (= :production (card-val :kind building))
-             (complement (some #{building} (l/focus (_player p :area) state))))]}
+             (complement (some #{building} (get-in state [:player p :area]))))]}
   
-  (move-card building (_player p :hand) (_player p :area) state))
+  (move-card building [:player p :hand] [:player p :area] state))
 
 
 (def s0 (init-game 4))
