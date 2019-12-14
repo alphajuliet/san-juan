@@ -1,8 +1,7 @@
 ;; state.clj
 ;; andrewj 2019-12-11
 
-(ns san-juan.state
-  (:require [lentes.core :as l]))
+(ns san-juan.state)
 
 ;;-----------------------
 ;; Utilities
@@ -86,20 +85,5 @@
                :role nil
                :turn 0
                :roles all-roles}))
-
-;;-----------------------
-;; Lenses
-
-(def _deck (l/key :deck))
-
-(defn _player 
-  "Lens to key k of player n."
-  [n k]
-  (comp (l/key :player) (l/nth n) (l/key k)))
-
-(defn _player_hand 
-  "Lens to player p's hand card."
-  [n card]
-  (comp (_player n :hand) (l/key card)))
 
 ;; The End

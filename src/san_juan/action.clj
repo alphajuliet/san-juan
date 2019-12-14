@@ -3,8 +3,6 @@
 
 (ns san-juan.action
   (:require [san-juan.state :refer :all]
-            [san-juan.hash-calc :as h]
-            [lentes.core :as l]
             [random-seed.core :as r]))
 
 ;;-----------------------
