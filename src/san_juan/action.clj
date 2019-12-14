@@ -89,15 +89,23 @@
 
 ;;-----------------------
 (defn build
-  "A player builds in their area, using zero or more designated cards to pay for it."
+  "A player builds in their area, using zero or more designated cards to pay for it. 
+   This function does not check on the costs or applying modifier cards but does check on validity of the card movements."
   ;; Integer -> Card -> Seq Card -> State -> State
   [p building payment-cards state]
+
   ;; Pre-conditions:
   ;; - Must have card in hand
   ;; - If violet, the card cannot already have been played.
   {:pre [(some #{building} (get-in state [:player p :hand]))
          (or (= :production (card-val :kind building))
              (complement (some #{building} (get-in state [:player p :area]))))]}
+
+  (as-> state ss
+    (move-card building [:player p :hand] [:player p :area] ss)
+    (reduce (fn [st card] (move-card card [:player p :hand] [:discards] st))
+            ss payment-cards)))
+
 
   ;; Modifier cards for Builder
   ;; - Smithy: cost is 1 less if a production building.
@@ -107,11 +115,8 @@
   ;; - Quarry: cost is 1 less if a violet building.
   ;; - Library: cost-2 for all buildings.
 
-  (as-> state ss
-       (move-card building [:player p :hand] [:player p :area] ss)
-       (reduce
-         (fn [st card] (move-card card [:player p :hand] [:discards] st))
-         ss payment-cards)))
+
+
 
 ;;-----------------------
 (defn produce [])

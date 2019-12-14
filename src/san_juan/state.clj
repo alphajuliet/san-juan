@@ -52,7 +52,20 @@
    (->Card :palace :violet 6 0 2)])
 
 ;; Default player state
-(defrecord Player [area hand chapel role vp])
+(defrecord Player [area    ;; played buildings
+                   hand    ;; hand cards
+                   goods   ;; produced goods but not yet traded
+                   chapel  ;; chapel cards
+                   role    ;; current role
+                   vp      ;; number of VPs
+                   ])
+
+(def empty-player 
+  (map->Player {:area []
+                :hand []
+                :goods []
+                :chapel []
+                :vp 0}))
 
 (def all-roles
   #{:builder :producer :trader :councillor :prospector})
@@ -78,10 +91,7 @@
   {:pre [(<= 2 nplayers 4)]}
   (map->State {:deck (enumerate-cards all-cards)
                :discards []
-               :player (vec (repeat nplayers (map->Player {:area []
-                                                           :hand []
-                                                           :chapel []
-                                                           :vp 0})))
+               :player (vec (repeat nplayers empty-player))
                :role nil
                :turn 0
                :roles all-roles}))
