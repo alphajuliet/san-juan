@@ -8,33 +8,37 @@
 ;;-----------------------
 ;; Utilities
 (defn removev
-  "Remove `elt` from vector `v`."
+  "Remove at most one instance of `elt` from vector `v`."
   [v elt]
-  (filterv (complement #{elt}) v))
+  (let [i (.indexOf v elt)]
+    (if (neg? i)
+      v
+      ; else
+      (into (subvec v 0 i) (subvec v (inc i))))))
 
 ;;-----------------------
 (defn pick-role
-  "A player `p` picks a role `r`."
+  "Player `p` picks a role `r`."
   ;; Role -> Integer -> State -> State
   [r p state]
-  (->> state
-       (l/over (l/key :roles) #(disj % r))
-       (l/put (comp (l/key :player) (l/nth p) (l/key :role)) r)))
+  (-> state
+      (update-in [:roles] #(disj % r))
+      (assoc-in [:player p :role] r)))
 
 ;;-----------------------
 (defn random-card
   "Pick a random card from a given pile."
   ;; Seq Card -> Card
   [cards]
-  (first (shuffle cards)))
+  (r/rand-nth cards))
 
 (defn move-card
   "Move a card from one pile to another."
   ;; forall a. Card -> Vector a -> Vector a -> State -> State
   [card _src _dest state]
   (-> state
-       (update-in _src #(removev % card))
-       (update-in _dest #(conj % card))))
+      (update-in _src #(removev % card))
+      (update-in _dest #(conj % card))))
 
 ;;-----------------------
 (defn deal-card
@@ -62,9 +66,10 @@
 
 ;;-----------------------
 (defn init-game
-  "Initialise the game with `n` players."
-  ;; Integer -> State
-  [n]
+  "Initialise the game with `n` players and random seed."
+  ;; Integer -> Integer -> State
+  [n seed]
+  (r/set-random-seed! seed)
   (->> (empty-state n)
        ;; Place an indigo plant in everyone's area
        (do-all-players
@@ -82,6 +87,7 @@
     :role ;; dispatch value
     [p state])
 
+;;-----------------------
 (defn build
   "A player builds in their area, using zero or more designated cards to pay for it."
   ;; Integer -> Card -> Seq Card -> State -> State
@@ -92,10 +98,27 @@
   {:pre [(some #{building} (get-in state [:player p :hand]))
          (or (= :production (card-val :kind building))
              (complement (some #{building} (get-in state [:player p :area]))))]}
-  
-  (move-card building [:player p :hand] [:player p :area] state))
 
+  ;; Modifier cards for Builder
+  ;; - Smithy: cost is 1 less if a production building.
+  ;; - Poorhouse: take an extra card after building a production building if 0 or 1 cards remaining in the hand.
+  ;; - Black market: use up to 2 goods to offset cost of any building.
+  ;; - Carpenter: take an extra card after building a violet building.
+  ;; - Quarry: cost is 1 less if a violet building.
+  ;; - Library: cost-2 for all buildings.
 
-(def s0 (init-game 4))
+  (as-> state ss
+       (move-card building [:player p :hand] [:player p :area] ss)
+       (reduce
+         (fn [st card] (move-card card [:player p :hand] [:discards] st))
+         ss payment-cards)))
+
+;;-----------------------
+(defn produce [])
+(defn trade [])
+(defn councillor [])
+(defn prospect [])
+
+(def s0 (init-game 4 0))
 
 ;; The End))

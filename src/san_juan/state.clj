@@ -24,7 +24,7 @@
    (->Card :sugar-mill :production 2 1 8)
    (->Card :tobacco-storage :production 3 2 8)
    (->Card :coffee-roaster :production 4 2 8)
-   (->Card :siver-smelter :production 5 3 8)
+   (->Card :silver-smelter :production 5 3 8)
    ; Violet buildings
    (->Card :smithy :violet 1 1 3)
    (->Card :gold-mine :violet 1 1 3)
