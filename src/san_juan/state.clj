@@ -17,7 +17,7 @@
 
 ;;-----------------------
 ;; Define a card
-(defrecord Card [name building cost vp count])
+(defrecord Card [name kind cost vp count])
 
 (def all-cards
   [; Production buildings
@@ -53,14 +53,16 @@
    (->Card :palace :violet 6 0 2)])
 
 ;; Default player state
-(defrecord Player [area
-                   hand
-                   chapel
-                   role
-                   vp])
+(defrecord Player [area hand chapel role vp])
 
 (def all-roles
   #{:builder :producer :trader :councillor :prospector})
+
+;; Lookup utility
+(defn card-val
+  "Lookup an attribute of a given named card."
+  [key name]
+  (key (first (filter (comp #{name} :name) all-cards))))
 
 ;;-----------------------
 ;; Define the State structure
@@ -75,13 +77,13 @@
   "Empty game state"
   [nplayers]
   {:pre [(<= 2 nplayers 4)]}
-  (map->State {:deck (reduce (fn [s e] (into s {(:name e), (:count e)})) {} all-cards)
-               :discards {}
-               :player (vec (repeat nplayers (map->Player {:area {}
-                                                           :hand {}
-                                                           :chapel {}
-                                                           :role nil
+  (map->State {:deck (enumerate-cards all-cards)
+               :discards []
+               :player (vec (repeat nplayers (map->Player {:area []
+                                                           :hand []
+                                                           :chapel []
                                                            :vp 0})))
+               :role nil
                :turn 0
                :roles all-roles}))
 
