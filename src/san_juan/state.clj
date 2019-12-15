@@ -73,6 +73,7 @@
 ;; Lookup utility
 (defn card-val
   "Lookup an attribute of a given named card."
+  {:type "forall a, b. Map a b -> a -> b"}
   [key name]
   (key (first (filter (comp #{name} :name) all-cards))))
 
@@ -87,6 +88,7 @@
 
 (defn empty-state
   "Empty game state"
+  {:type "Integer -> State"}
   [nplayers]
   {:pre [(<= 2 nplayers 4)]}
   (map->State {:deck (enumerate-cards all-cards)

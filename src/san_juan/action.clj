@@ -9,6 +9,7 @@
 ;; Utilities
 (defn removev
   "Remove at most one instance of `elt` from vector `v`."
+  {:type "∀ a. Vector a -> a -> Vector a"}
   [v elt]
   (let [i (.indexOf v elt)]
     (if (neg? i)
@@ -19,7 +20,7 @@
 ;;-----------------------
 (defn pick-role
   "Player `p` picks a role `r`."
-  ;; Role -> Integer -> State -> State
+  {:type "Role -> Integer -> State -> State"}
   [r p state]
   (-> state
       (update-in [:roles] #(disj % r))
@@ -28,13 +29,13 @@
 ;;-----------------------
 (defn random-card
   "Pick a random card from a given pile."
-  ;; Seq Card -> Card
+  {:type "Seq Card -> Card"}
   [cards]
   (r/rand-nth cards))
 
 (defn move-card
   "Move a card from one pile to another."
-  ;; forall a. Card -> Vector a -> Vector a -> State -> State
+  {:type "∀ a. Card -> Vector a -> Vector a -> State -> State"}
   [card _src _dest state]
   (-> state
       (update-in _src #(removev % card))
@@ -43,14 +44,14 @@
 ;;-----------------------
 (defn deal-card
   "Deal a card from the deck to player `p`'s hand."
-  ;; deal-card :: Integer -> State -> State
+  {:type "Integer -> State -> State"}
   [p state]
   (let [card (random-card (:deck state))]
     (move-card card [:deck] [:player p :hand] state)))
 
 (defn deal-n-cards
   "Deal `n` random cards from the deck to the hand of player `p`."
-  ;; deal-n-cards :: Integer -> State -> State
+  {:type "Integer -> State -> State"}
   [n p state]
   (reduce (fn [st _] (deal-card p st))
           state
@@ -59,7 +60,7 @@
 ;;-----------------------
 (defn do-all-players
   "Apply reducing function `f` to all players."
-  ;; (State -> Integer -> State) -> State -> State
+  {:type "(State -> Integer -> State) -> State -> State"}
   [f state]
   (let [nplayers (count (:player state))]
     (reduce f state (range nplayers))))
@@ -67,7 +68,7 @@
 ;;-----------------------
 (defn init-game
   "Initialise the game with `n` players and random seed."
-  ;; Integer -> Integer -> State
+  {:type "Integer -> Integer -> State"}
   [n seed]
   (r/set-random-seed! seed)
   (->> (empty-state n)
@@ -91,7 +92,7 @@
 (defn build
   "A player builds in their area, using zero or more designated cards to pay for it. 
    This function does not check on the costs or applying modifier cards but does check on validity of the card movements."
-  ;; Integer -> Card -> Seq Card -> State -> State
+  {:type "Integer -> Card -> Seq Card -> State -> State"}
   [p building payment-cards state]
 
   ;; Pre-conditions:
@@ -107,23 +108,13 @@
             ss payment-cards)))
 
 
-  ;; Modifier cards for Builder
-  ;; - Smithy: cost is 1 less if a production building.
-  ;; - Poorhouse: take an extra card after building a production building if 0 or 1 cards remaining in the hand.
-  ;; - Black market: use up to 2 goods to offset cost of any building.
-  ;; - Carpenter: take an extra card after building a violet building.
-  ;; - Quarry: cost is 1 less if a violet building.
-  ;; - Library: cost-2 for all buildings.
-
-
-
-
 ;;-----------------------
 (defn produce [])
 (defn trade [])
 (defn councillor [])
 (defn prospect [])
 
-(def s0 (init-game 4 0))
+(def s0 
+  (init-game 4 0))
 
 ;; The End))
