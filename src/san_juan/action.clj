@@ -3,19 +3,21 @@
 
 (ns san-juan.action
   (:require [san-juan.state :refer :all]
-            [random-seed.core :as r]))
+            [san-juan.modifier :refer :all]
+            [random-seed.core :as r])
+  (:refer-clojure :exclude [rand rand-int rand-nth]))
 
 ;;-----------------------
 ;; Utilities
 (defn removev
-  "Remove at most one instance of `elt` from vector `v`."
+  "Remove at most one instance of `elt` from a vector."
   {:type "∀ a. Vector a -> a -> Vector a"}
-  [v elt]
-  (let [i (.indexOf v elt)]
+  [coll elt]
+  (let [i (.indexOf coll elt)]
     (if (neg? i)
-      v
+      coll
       ; else
-      (into (subvec v 0 i) (subvec v (inc i))))))
+      (into (subvec coll 0 i) (subvec coll (inc i))))))
 
 ;;-----------------------
 (defn pick-role
@@ -83,30 +85,60 @@
           (deal-n-cards 4 p st)))))
 
 ;;-----------------------
-#_(defmulti play-role
-    "A player picks and executes one of the roles."
-    :role ;; dispatch value
-    [p state])
+(defrecord Action [player  ;; player performing the action
+                   action    ;; type of action
+                   build   ;; card to build (Builder)
+                   cost    ;; cost to build the card (Builder)
+                   pay     ;; cards that will be used to pay (Builder)
+                   take    ;; how many cards to take (all)
+                   sell    ;; cards to sell (Trader)
+                   produce ;; cards to produce (Producer)
+                   keep    ;; cards to keep (Councillor)
+                   ])
 
 ;;-----------------------
 (defn build
-  "A player builds in their area, using zero or more designated cards to pay for it. 
+  "A player builds in their area, using zero or more designated hand cards and goods cards to pay for it. 
    This function does not check on the costs or applying modifier cards but does check on validity of the card movements."
-  {:type "Integer -> Card -> Seq Card -> State -> State"}
-  [p building payment-cards state]
+  {:type "Action -> State"}
+  [{:keys [player build pay take] :as action} state]
 
   ;; Pre-conditions:
   ;; - Must have card in hand
   ;; - If violet, the card cannot already have been played.
-  {:pre [(some #{building} (get-in state [:player p :hand]))
-         (or (= :production (card-val :kind building))
-             (complement (some #{building} (get-in state [:player p :area]))))]}
+  {:pre [(some #{build} (get-in state [:player player :hand]))
+         (or (= :production (card-val :kind build))
+             (complement (some #{build} (get-in state [:player player :area]))))]}
 
-  (as-> state ss
-    (move-card building [:player p :hand] [:player p :area] ss)
-    (reduce (fn [st card] (move-card card [:player p :hand] [:discards] st))
-            ss payment-cards)))
+  (let [_hand [:player player :hand]
+        _area [:player player :area]
+        hand-cards (get-in state _hand)]
+    (as-> state ss
+      (move-card (:build action) _hand _area ss)
+      (reduce (fn [st card] (move-card card _hand [:discards] st))
+              ss pay)
+      (deal-n-cards take player ss))))
 
+
+(defn builder-options
+  "Available builder actions for a given player `p`."
+  {:type "Integer -> State -> [Action]"}
+  [p state]
+  (let [hand-cards (get-in state [:player p :hand])
+        area-cards (get-in state [:player p :area])
+        n (count hand-cards)]
+    (for [c hand-cards]
+      (let [cost (card-val :cost c) ;; base cost
+            action (map->Action {:action :builder
+                                 :player p
+                                 :build c
+                                 :cost cost
+                                 :pay []
+                                 :take 0})]
+        ;; Cumulatively apply the built modifier cards
+        (reduce (fn [acc elt] (modify acc elt))
+                action
+                area-cards)))))
 
 ;;-----------------------
 (defn produce [])
@@ -114,7 +146,7 @@
 (defn councillor [])
 (defn prospect [])
 
-(def s0 
+(def s0
   (init-game 4 0))
 
 ;; The End))

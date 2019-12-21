@@ -60,7 +60,7 @@
                    vp      ;; number of VPs
                    ])
 
-(def empty-player 
+(def empty-player
   (map->Player {:area []
                 :hand []
                 :goods []
@@ -75,7 +75,10 @@
   "Lookup an attribute of a given named card."
   {:type "forall a, b. Map a b -> a -> b"}
   [key name]
-  (key (first (filter (comp #{name} :name) all-cards))))
+  (->> all-cards
+       (filter (comp #{name} :name))
+       first
+       key))
 
 ;;-----------------------
 ;; Define the State structure
