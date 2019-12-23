@@ -2,7 +2,7 @@
 ;; andrewj 2019-12-21
 
 (ns san-juan.modifier
-  (:require [san-juan.state :refer :all]))
+  #_(:require [san-juan.state :refer :all]))
 
 ;;-----------------------
 (defmulti modify
@@ -30,7 +30,9 @@
 
 (defmethod modify [:builder :poorhouse]
   [action modifier]
-  (update-in action [:take] inc))
+  (if (= :production (card-val :kind (:build action)))
+    (update-in action [:take] inc)
+    action))
 
 ;;-----------------------
 ;; Catch-all

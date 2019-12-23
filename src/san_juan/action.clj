@@ -96,6 +96,19 @@
                    keep    ;; cards to keep (Councillor)
                    ])
 
+
+;;-----------------------
+(defn apply-modifiers
+  [p action state]
+  "Apply the relevant modifier cards to the given `action`."
+  (let [area-cards (get-in state [:player p :area])
+        modifier-cards (if (:is-picker action)
+                         (conj area-cards :picker)
+                         area-cards)]
+    (reduce (fn [acc elt] (modify acc elt))
+            action
+            modifier-cards)))
+
 ;;-----------------------
 (defn build
   "A player builds in their area, using zero or more designated hand cards and goods cards to pay for it. 
@@ -120,10 +133,10 @@
       (deal-n-cards take player ss))))
 
 
-(defn builder-options
-  "Available builder actions for a given player `p`."
-  {:type "Integer -> State -> [Action]"}
-  [p state]
+(defn build-options
+  "Available actions for player `p` to build something. Set `isPicker` true if player `p` picked the builder action."
+  {:type "Integer -> Boolean -> State -> [Action]"}
+  [p is-picker state]
   (let [hand-cards (get-in state [:player p :hand])
         area-cards (get-in state [:player p :area])
         n (count hand-cards)]
@@ -131,14 +144,13 @@
       (let [cost (card-val :cost c) ;; base cost
             action (map->Action {:action :builder
                                  :player p
+                                 :is-picker is-picker
                                  :build c
                                  :cost cost
                                  :pay []
                                  :take 0})]
         ;; Cumulatively apply the built modifier cards
-        (reduce (fn [acc elt] (modify acc elt))
-                action
-                area-cards)))))
+        (apply-modifiers p action state)))))
 
 ;;-----------------------
 (defn produce [])
@@ -147,6 +159,7 @@
 (defn prospect [])
 
 (def s0
+  "Initial state with 4 players and a seed of 0."
   (init-game 4 0))
 
 ;; The End))
