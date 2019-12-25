@@ -96,7 +96,6 @@
                    keep    ;; cards to keep (Councillor)
                    ])
 
-
 ;;-----------------------
 (defn apply-modifiers
   [p action state]
@@ -105,7 +104,8 @@
         modifier-cards (if (:is-picker action)
                          (conj area-cards :picker)
                          area-cards)]
-    (reduce (fn [acc elt] (modify acc elt))
+    (reduce (fn [acc elt] 
+              (modify acc elt state))
             action
             modifier-cards)))
 
@@ -131,26 +131,6 @@
       (reduce (fn [st card] (move-card card _hand [:discards] st))
               ss pay)
       (deal-n-cards take player ss))))
-
-
-(defn build-options
-  "Available actions for player `p` to build something. Set `isPicker` true if player `p` picked the builder action."
-  {:type "Integer -> Boolean -> State -> [Action]"}
-  [p is-picker state]
-  (let [hand-cards (get-in state [:player p :hand])
-        area-cards (get-in state [:player p :area])
-        n (count hand-cards)]
-    (for [c hand-cards]
-      (let [cost (card-val :cost c) ;; base cost
-            action (map->Action {:action :builder
-                                 :player p
-                                 :is-picker is-picker
-                                 :build c
-                                 :cost cost
-                                 :pay []
-                                 :take 0})]
-        ;; Cumulatively apply the built modifier cards
-        (apply-modifiers p action state)))))
 
 ;;-----------------------
 (defn produce [])
