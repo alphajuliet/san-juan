@@ -1,5 +1,5 @@
-;; action.clj
 ;; andrewj 2019-12-12
+;; action.clj
 
 (ns san-juan.action
   (:require [san-juan.state :refer :all]
@@ -86,7 +86,7 @@
 
 ;;-----------------------
 (defrecord Action [player  ;; player performing the action
-                   action    ;; type of action
+                   action  ;; type of action
                    build   ;; card to build (Builder)
                    cost    ;; cost to build the card (Builder)
                    pay     ;; cards that will be used to pay (Builder)
@@ -104,7 +104,7 @@
         modifier-cards (if (:is-picker action)
                          (conj area-cards :picker)
                          area-cards)]
-    (reduce (fn [acc elt] 
+    (reduce (fn [acc elt]
               (modify acc elt state))
             action
             modifier-cards)))
@@ -133,11 +133,27 @@
       (deal-n-cards take player ss))))
 
 ;;-----------------------
-(defn produce [])
+(defn produce
+  "A player produces goods."
+  {:type "Action -> State"}
+  [{:keys [player produce] :as action} state]
+
+  (let [(prod-cards (-> (get-in state [:player player :area])
+                        (filter #(= :production (card-val :kind %)))))
+        act (apply-modifiers player action state)]
+    (as-> state ss
+      ())))
+
+;;-----------------------
 (defn trade [])
+
+;;-----------------------
 (defn councillor [])
+
+;;-----------------------
 (defn prospect [])
 
+;;-----------------------
 (def s0
   "Initial state with 4 players and a seed of 0."
   (init-game 4 0))

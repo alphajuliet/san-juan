@@ -16,7 +16,12 @@
 
 ;;-----------------------
 ;; Define a card
-(defrecord Card [name kind cost vp count])
+(defrecord Card [name   ;; name of the card
+                 kind   ;; production or violet card
+                 cost   ;; build cost
+                 vp     ;; base victory points
+                 count  ;; number of cards with this name
+                 ])
 
 (def all-cards
   [; Production buildings
@@ -52,12 +57,11 @@
    (->Card :palace :violet 6 0 2)])
 
 ;; Default player state
-(defrecord Player [area    ;; played buildings
-                   hand    ;; hand cards
-                   goods   ;; produced goods but not yet traded
-                   chapel  ;; chapel cards
-                   role    ;; current role
-                   vp      ;; number of VPs
+(defrecord Player [area    ;; played buildings :: [Card]
+                   hand    ;; hand cards :: [Card]
+                   goods   ;; produced goods but not yet traded :: [Integer]
+                   chapel  ;; chapel cards :: [Card]
+                   vp      ;; number of VPs :: Integer >= 0
                    ])
 
 (def empty-player
@@ -68,12 +72,14 @@
                 :vp 0}))
 
 (def all-roles
+  ;; :type Set Role
+  "All available roles."
   #{:builder :producer :trader :councillor :prospector})
 
 ;; Lookup utility
 (defn card-val
   "Lookup an attribute of a given named card."
-  {:type "forall a, b. Map a b -> a -> b"}
+  {:type "forall a b. Map a b -> a -> b"}
   [key name]
   (->> all-cards
        (filter (comp #{name} :name))
@@ -81,12 +87,12 @@
        key))
 
 ;;-----------------------
-;; Define the State structure
-(defrecord State [deck     ;; the deck of unused cards
-                  discards ;; discard pile
-                  player   ;; player hand and their play area
-                  turn     ;; current turn number
-                  roles    ;; role cards remaining in this turn
+;; Define the game state
+(defrecord State [deck     ;; the deck of unused cards :: [Card]
+                  discards ;; discard pile :: [Card]
+                  player   ;; player hand and their play area :: [Player]
+                  turn     ;; current turn number :: Integer >= 0
+                  roles    ;; available roles :: #{Role}
                   ])
 
 (defn empty-state
@@ -97,7 +103,6 @@
   (map->State {:deck (enumerate-cards all-cards)
                :discards []
                :player (vec (repeat nplayers empty-player))
-               :role nil
                :turn 0
                :roles all-roles}))
 
