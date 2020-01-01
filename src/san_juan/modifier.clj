@@ -6,60 +6,72 @@
 
 ;;-----------------------
 (defmulti modify
-  "Define a multimethod for handling modifications of actions based on cards or roles.
-   This uses double dispatch on action and card/role."
-  {:type "Action -> Card -> State -> Action"}
-  (fn [action caller _]
-    [(:action action) caller]))
+  "A multimethod for handling modification to a card's properties according to role, whether the player picked the role, and a modifier card."
+  {:type "forall a b. Role -> Card -> Map a b -> Card"}
+  (fn [role modifier _]
+    [role modifier]))
 
 ;;-----------------------
 ;; Builder modifiers
-;; - Picker: cost is 1 less for all cards.
+;; - Picker: cost is 1 less for all targets.
 ;; - Smithy: cost is 1 less if a production building.
-;; - Poorhouse: take an extra card after building a production building if 0 or 1 cards remaining in the hand.
+;; - Poorhouse: take an extra CARD after building a production building if 0 or 1 targets remaining in the hand.
 ;; - Black market: use up to 2 goods to offset cost of any building.
 ;; - Carpenter: take an extra card after building a violet building.
 ;; - Quarry: cost is 1 less if a violet building.
 ;; - Library: cost-2 for all buildings.
 
-(defmethod modify [:builder :picker]
-  [action modifier _]
+(defmethod modify [:build-cost :picker]
+  [_ _ target]
   "Picker: cost is 1 less for all cards."
-  (update-in action [:cost] dec))
+  (update target :cost dec))
 
-(defmethod modify [:builder :smithy]
-  [action modifier _]
+(defmethod modify [:build-cost :smithy]
+  [_ modifier target]
   "Smithy: cost is 1 less if a production building."
-  (if (= :production (card-val :kind (:build action)))
-    (update-in action [:cost] dec)
-    action))
+  (if (#{:production} (:kind target))
+    (update target :cost dec)
+    target))
 
-(defmethod modify [:builder :poorhouse]
-  [action modifier _]
-  "Poorhouse: take an extra card after building a production building if 0 or 1 cards remaining in the hand."
-  (if (= :production (card-val :kind (:build action)))
-    (update-in action [:take] inc)
-    action))
+(defmethod modify [:build-take :poorhouse]
+  [_ modifier target]
+  "Poorhouse: take an extra card after building a production building if 0 or 1 targets remaining in the hand."
+  (if (#{:production} (:kind target))
+    (update-in target [:take] inc)
+    target))
 
-(defmethod modify [:builder :carpenter]
-  [action modifier _]
+(defmethod modify [:build-take :carpenter]
+  [_ modifier target]
   "Carpenter: take an extra card after building a violet building."
-  (if (= :violet (card-val :kind (:build action)))
-    (update-in action [:take] inc)
-    action))
+  (if (#{:violet} (:kind target))
+    (update-in target [:take] inc)
+    target))
 
-(defmethod modify [:builder :quarry]
-  [action modifier _]
+(defmethod modify [:build-cost :quarry]
+  [_ modifier target]
   "Quarry: cost is 1 less if a violet building."
-  (if (= :violet (card-val :kind (:build action)))
-    (update-in action [:cost] dec)
-    action))
+  (if (#{:violet} (:kind target))
+    ((update-in target [:cost] dec))
+    target))
 
 ;;-----------------------
 ;; Catch-all
 (defmethod modify :default
-  [action _ _]
-  "Default case, return action unchanged."
-  action)
+  [_ _ target]
+  "Default case, return the target unchanged."
+  target)
+
+;;-----------------------
+(defn modify-hand
+  "Run modifications over all the hand cards based on the modifier list."
+  {:type "Role -> [Card] -> [Card] -> [Card]"}
+  [role modifiers hand-cards]
+  (let [handx (map #(get all-cards %) hand-cards)]  ;; expand to include all hand card info
+    (map
+     (fn [card]
+       (reduce (fn [acc elt] (modify role elt acc))
+               card
+               modifiers))
+     handx)))
 
 ;; The End

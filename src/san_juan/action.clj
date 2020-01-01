@@ -97,20 +97,18 @@
                    ])
 
 ;;-----------------------
-(defn apply-modifiers
-  [p action state]
-  "Apply the relevant modifier cards to the given `action`."
-  (let [area-cards (get-in state [:player p :area])
-        modifier-cards (if (:is-picker action)
-                         (conj area-cards :picker)
-                         area-cards)]
-    (reduce (fn [acc elt]
-              (modify acc elt state))
-            action
-            modifier-cards)))
+(defn build-modify-costs
+  "Modify the costs of the hand cards based on the area cards."
+  [player picker? state]
+  {:pre [(boolean? picker?)
+         (<= 0 player (dec (count (:player state))))]}
 
-;;-----------------------
-(defn build
+  (let [hand-cards (get-in state [:player player :hand])
+        area-cards (get-in state [:player player :area])]
+    (modify-hand :builder picker? area-cards hand-cards)))
+
+
+(defn build-move-cards
   "A player builds in their area, using zero or more designated hand cards and goods cards to pay for it. 
    This function does not check on the costs or applying modifier cards but does check on validity of the card movements."
   {:type "Action -> State"}
@@ -120,7 +118,7 @@
   ;; - Must have card in hand
   ;; - If violet, the card cannot already have been played.
   {:pre [(some #{build} (get-in state [:player player :hand]))
-         (or (= :production (card-val :kind build))
+         (or (= :production (:kind build))
              (complement (some #{build} (get-in state [:player player :area]))))]}
 
   (let [_hand [:player player :hand]
@@ -132,17 +130,20 @@
               ss pay)
       (deal-n-cards take player ss))))
 
-;;-----------------------
-(defn produce
-  "A player produces goods."
-  {:type "Action -> State"}
-  [{:keys [player produce] :as action} state]
 
-  (let [(prod-cards (-> (get-in state [:player player :area])
-                        (filter #(= :production (card-val :kind %)))))
-        act (apply-modifiers player action state)]
-    (as-> state ss
-      ())))
+
+
+;;-----------------------
+#_(defn produce
+    "A player produces goods."
+    {:type "Action -> State"}
+    [{:keys [player produce] :as action} state]
+
+    (let [(prod-cards (-> (get-in state [:player player :area])
+                          (filter #(= :production (card-val :kind %)))))
+          act (apply-modifiers player action state)]
+      (as-> state ss
+        ())))
 
 ;;-----------------------
 (defn trade [])
@@ -158,4 +159,7 @@
   "Initial state with 4 players and a seed of 0."
   (init-game 4 0))
 
+(def s1 
+  "s0 plus a Smithy card in player 0's area."
+  (move-card :smithy [:deck] [:player 0 :area] s0))
 ;; The End))
