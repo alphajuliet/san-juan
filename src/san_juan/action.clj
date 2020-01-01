@@ -104,8 +104,9 @@
          (<= 0 player (dec (count (:player state))))]}
 
   (let [hand-cards (get-in state [:player player :hand])
-        area-cards (get-in state [:player player :area])]
-    (modify-hand :builder picker? area-cards hand-cards)))
+        area-cards (get-in state [:player player :area])
+        a (if picker? (conj area-cards :picker) area-cards)]
+    (modify-hand :build-cost a hand-cards)))
 
 
 (defn build-move-cards
