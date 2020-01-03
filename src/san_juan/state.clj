@@ -59,6 +59,7 @@
 
 (defn extract-vals
   "Extract only the requested keys k from map m."
+  {:type ∀ a. [a] -> Map a b -> Map a b}
   [k m]
   (map #(select-keys % k) m))
 
@@ -94,7 +95,7 @@
 
 (defn empty-state
   "Empty game state"
-  {:type "Integer -> State"}
+  {:type Integer -> State}
   [nplayers]
   {:pre [(<= 2 nplayers 4)]}
   (map->State {:deck (enumerate-cards (vals all-cards))

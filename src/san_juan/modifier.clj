@@ -7,7 +7,7 @@
 ;;-----------------------
 (defmulti modify
   "A multimethod for handling modification to a card's properties according to role, whether the player picked the role, and a modifier card."
-  {:type "forall a b. Role -> Card -> Map a b -> Card"}
+  {:type ∀ a b. Role -> Card -> Map a b -> Card}
   (fn [role modifier _]
     [role modifier]))
 
@@ -33,6 +33,13 @@
     (update target :cost dec)
     target))
 
+(defmethod modify [:build-cost :quarry]
+  [_ modifier target]
+  "Quarry: cost is 1 less if a violet building."
+  (if (#{:violet} (:kind target))
+    (update target :cost dec)
+    target))
+
 (defmethod modify [:build-take :poorhouse]
   [_ modifier target]
   "Poorhouse: take an extra card after building a production building if 0 or 1 targets remaining in the hand."
@@ -47,13 +54,6 @@
     (update-in target [:take] inc)
     target))
 
-(defmethod modify [:build-cost :quarry]
-  [_ modifier target]
-  "Quarry: cost is 1 less if a violet building."
-  (if (#{:violet} (:kind target))
-    ((update-in target [:cost] dec))
-    target))
-
 ;;-----------------------
 ;; Catch-all
 (defmethod modify :default
@@ -63,10 +63,10 @@
 
 ;;-----------------------
 (defn modify-hand
-  "Run modifications over all the hand cards based on the modifier list."
-  {:type "Role -> [Card] -> [Card] -> [Card]"}
-  [role modifiers hand-cards]
-  (let [handx (map #(get all-cards %) hand-cards)]  ;; expand to include all hand card info
+  "Run modifications over all the hand cards based on the modifier cards."
+  {:type Role -> [Card] -> [Card] -> [Card]}
+  [role modifiers hand]
+  (let [handx (map #(get all-cards %) hand)]  ;; expand hand to include all hand card info
     (map
      (fn [card]
        (reduce (fn [acc elt] (modify role elt acc))

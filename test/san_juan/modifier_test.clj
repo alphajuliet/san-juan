@@ -6,14 +6,12 @@
 
 (deftest modifier-tests
   (testing "modify"
-    (let [m0 (modify :build-cost :indigo-plant (:sugar-mill all-cards))
-          m1 (modify :build-cost :picker (:sugar-mill all-cards))
-          m2 (modify :build-cost :smithy (:sugar-mill all-cards))
-          m3 (modify :build-cost :smithy (:prefecture all-cards))]
-      (is (= 2 (:cost m0)))
-      (is (= 1 (:cost m1)))
-      (is (= 1 (:cost m2)))
-      (is (= 3 (:cost m3)))))
+    (let []
+      (is (= 2 (:cost (modify :build-cost :indigo-plant (:sugar-mill all-cards)))))
+      (is (= 1 (:cost (modify :build-cost :picker (:sugar-mill all-cards)))))
+      (is (= 1 (:cost (modify :build-cost :smithy (:sugar-mill all-cards)))))
+      (is (= 3 (:cost (modify :build-cost :smithy (:prefecture all-cards)))))
+      (is (= 2 (:cost (modify :build-cost :quarry (:prefecture all-cards)))))))
 
   (testing "modify-hand"
     (let [h1 (get-in s1 [:player 0 :hand])
