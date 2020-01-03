@@ -7,7 +7,7 @@
 ;;-----------------------
 (defmulti modify
   "A multimethod for handling modification to a card's properties according to role, whether the player picked the role, and a modifier card."
-  {:type ∀ a b. Role -> Card -> Map a b -> Card}
+  {:type "∀ a b. Role -> Card -> Map a b -> Card"}
   (fn [role modifier _]
     [role modifier]))
 
@@ -64,7 +64,7 @@
 ;;-----------------------
 (defn modify-hand
   "Run modifications over all the hand cards based on the modifier cards."
-  {:type Role -> [Card] -> [Card] -> [Card]}
+  {:type "Role -> [Card] -> [Card] -> [Card]"}
   [role modifiers hand]
   (let [handx (map #(get all-cards %) hand)]  ;; expand hand to include all hand card info
     (map
