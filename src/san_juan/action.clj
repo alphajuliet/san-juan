@@ -84,19 +84,15 @@
           (deal-n-cards 4 p st)))))
 
 ;;-----------------------
-(defrecord Action [player  ;; player performing the action
-                   action  ;; type of action
-                   build   ;; card to build (Builder)
-                   cost    ;; cost to build the card (Builder)
-                   pay     ;; cards that will be used to pay (Builder)
-                   take    ;; how many cards to take (all)
-                   sell    ;; cards to sell (Trader)
-                   produce ;; cards to produce (Producer)
-                   keep    ;; cards to keep (Councillor)
-                   ])
+;; Builder role
+;;
+;; Steps:
+;; 1. Modify the costs of the hand cards based on the area card, or if this player picked the role.
+;; 2. Filter the hand cards based on what is affordable.
+;; 3. Build and pay with hand cards, and possibly goods cards (via the :black-market card)
+;; 4. Take 0 or 1 cards from the deck, based on area cards
 
-;;-----------------------
-(defn build-modify-costs
+(defn builder-modify-costs
   "Modify the costs of the hand cards based on the area cards."
   {:type "∀ a b. Integer -> Boolean -> State -> Map a b"}
   [player picker? state]
@@ -108,14 +104,27 @@
         a (if picker? (conj area-cards :picker) area-cards)]
     (modify-hand :build-cost a hand-cards)))
 
-(defn build-filter-cards
+(defn- builder-filter-cards
   "Filter the affordable cards, i.e. those with a cost less than the remaining hand cards."
   {:type "∀ a b. Map a b -> Map a b"}
   [hand-cards]
   (filter #(<= (:cost %) (dec (count hand-cards))) hand-cards))
 
+(defn builder-affordable-buildings
+  "Adjust building costs based on area cards, then return only the affordable buildings."
+  [player picker? state]
+  (->> state
+       (build-modify-costs player picker?)
+       build-filter-cards))
 
-(defn build-move-cards
+(defn builder-play-card
+  "Play a building to the player's area, and pay hand and goods cards.
+  For example: `(build-play-card 0 :sugar-mill [:aqueduct :trading-post]] s1)`"
+  {:type "Integer -> Card -> [Card] -> State -> State"}
+  [player building payment-cards state]
+  ())
+
+(defn builder-move-cards
   "A player builds in their area, using zero or more designated hand cards and goods cards to pay for it."
   {:type "∀ a b. Map a b -> State -> State"}
   [{:keys [player build pay take] :as action} state]
@@ -135,7 +144,6 @@
       (reduce (fn [st card] (move-card card _hand [:discards] st))
               <> pay)
       (deal-n-cards take player <>))))
-
 
 ;;-----------------------
 #_(defn produce

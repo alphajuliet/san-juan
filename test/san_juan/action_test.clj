@@ -12,9 +12,8 @@
   (testing "build-modify-costs"
     (let [s0 (init-game 4 0)
           s1 (move-card :smithy [:deck] [:player 0 :area] s0)]
-      (is (= 4 (count (build-modify-costs 0 false s0))))
-      (is (= '(2 3 2 3) (map :cost (build-modify-costs 0 false s0))))
-      (is (= 4 (count (-> (build-modify-costs 0 false s0)
-                          build-filter-cards)))))))
+      (is (= 4 (count (builder-modify-costs 0 false s0))))
+      (is (= '(2 3 2 3) (map :cost (builder-modify-costs 0 false s0))))
+      (is (= 4 (count (builder-affordable-buildings 0 false s1)))))))
 
 ;; The End
