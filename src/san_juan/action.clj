@@ -29,12 +29,6 @@
       (assoc-in [:player p :role] r)))
 
 ;;-----------------------
-(defn random-card
-  "Pick a random card from a given pile."
-  {:type "Seq Card -> Card"}
-  [cards]
-  (r/rand-nth cards))
-
 (defn move-card
   "Move a card from one pile to another."
   {:type "∀ a. Card -> Seq a -> Seq a -> State -> State"}
@@ -45,10 +39,10 @@
 
 ;;-----------------------
 (defn deal-card
-  "Deal a card from the deck to player `p`'s hand."
+  "Deal a random card from the deck to player `p`'s hand."
   {:type "Integer -> State -> State"}
   [p state]
-  (let [card (random-card (:deck state))]
+  (let [card (r/rand-nth (:deck state))]
     (move-card card [:deck] [:player p :hand] state)))
 
 (defn deal-n-cards
@@ -94,7 +88,7 @@
 
 (defn builder-modify-costs
   "Modify the costs of the hand cards based on the area cards."
-  {:type "∀ a b. Integer -> Boolean -> State -> Map a b"}
+  {:type "Integer -> Boolean -> State -> [CardX]"}
   [player picker? state]
   {:pre [(boolean? picker?)
          (<= 0 player (dec (count (:player state))))]}
@@ -104,46 +98,56 @@
         a (if picker? (conj area-cards :picker) area-cards)]
     (modify-hand :build-cost a hand-cards)))
 
-(defn- builder-filter-cards
+(defn builder-filter-cards
   "Filter the affordable cards, i.e. those with a cost less than the remaining hand cards."
-  {:type "∀ a b. Map a b -> Map a b"}
+  {:type "[CardX] -> [CardX]"}
   [hand-cards]
   (filter #(<= (:cost %) (dec (count hand-cards))) hand-cards))
 
-(defn builder-affordable-buildings
-  "Adjust building costs based on area cards, then return only the affordable buildings."
-  [player picker? state]
-  (->> state
-       (build-modify-costs player picker?)
-       build-filter-cards))
-
-(defn builder-play-card
-  "Play a building to the player's area, and pay hand and goods cards.
-  For example: `(build-play-card 0 :sugar-mill [:aqueduct :trading-post]] s1)`"
-  {:type "Integer -> Card -> [Card] -> State -> State"}
-  [player building payment-cards state]
+;; TODO
+(defn builder-available-goods
+  "Return the available goods that can be used for payment with the :black-market card."
+  []
   ())
+
+(defn builder-take-cards
+  "Take 0 or 1 card after building."
+  {:type "[Card] -> State -> State"}
+  [area-cards hand-card]
+  (reduce (fn [acc elt] (modify :build-take elt acc)) {:take 0} area-cards))
 
 (defn builder-move-cards
   "A player builds in their area, using zero or more designated hand cards and goods cards to pay for it."
   {:type "∀ a b. Map a b -> State -> State"}
-  [{:keys [player build pay take] :as action} state]
+  [{:keys [player build-card payment-cards take-number] :as action} state]
 
   ;; Pre-conditions:
   ;; - Must have card in hand
   ;; - If violet, the card cannot already have been played.
-  {:pre [(some #{build} (get-in state [:player player :hand]))
-         (or (= :production (:kind build))
-             (complement (some #{build} (get-in state [:player player :area]))))]}
+  {:pre [(some #{build-card} (get-in state [:player player :hand]))
+         (or (= :production (:kind build-card))
+             (complement (some #{build-card} (get-in state [:player player :area]))))]}
 
   (let [_hand [:player player :hand]
         _area [:player player :area]
         hand-cards (get-in state _hand)]
     (as-> state <>
-      (move-card (:build action) _hand _area <>)
+      (move-card build-card _hand _area <>)
       (reduce (fn [st card] (move-card card _hand [:discards] st))
-              <> pay)
-      (deal-n-cards take player <>))))
+              <> payment-cards)
+      (deal-n-cards take-number player state))))
+
+(defn builder
+  "Play a builder turn with a given policy for which card to build and which cards or goods to pay with."
+  {:type "Integer -> Boolean -> Policy -> Policy -> State -> State"}
+  [player picker? policy-build state]
+  (as-> state <>
+       (builder-modify-costs player picker? <>)
+       (builder-filter-cards <>)
+       ; (builder-available-goods <> state)
+       (policy-build <> state)
+       (builder-move-cards <>)
+       (builder-take-cards <>)))
 
 ;;-----------------------
 #_(defn produce

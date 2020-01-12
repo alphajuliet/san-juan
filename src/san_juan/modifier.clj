@@ -64,9 +64,9 @@
 ;;-----------------------
 (defn modify-hand
   "Run modifications over all the hand cards based on the modifier cards."
-  {:type "Role -> [Card] -> [Card] -> [Card]"}
-  [role modifiers hand]
-  (let [handx (map #(get all-cards %) hand)]  ;; expand hand to include all hand card info
+  {:type "Role -> [Card] -> [Card] -> [CardX]"}
+  [role modifiers hand-cards]
+  (let [handx (map (partial get all-cards) hand-cards)]
     (map
      (fn [card]
        (reduce (fn [acc elt] (modify role elt acc))

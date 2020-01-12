@@ -8,6 +8,7 @@
 
 (defn enumerate-cards
   "For each card in the given deck, add `count` copies of `name`, and concatenate into a single list."
+  {:type "∀ a. Map a Integer -> [a]"}
   [d]
   (reduce
    (fn [accum element]
@@ -15,47 +16,49 @@
    [] d))
 
 ;;-----------------------
-;; Define a card
-(defrecord Card [name   ;; name of the card
-                 kind   ;; production or violet card
-                 cost   ;; build cost
-                 vp     ;; base victory points
-                 count  ;; number of cards with this name
-                 ])
+;; Define an extended card with all its attributes
+;; ^{:type "CardX"}
+(defrecord CardX [name   ;; name of the card :: CardX
+                  kind   ;; production or violet card
+                  cost   ;; build cost
+                  vp     ;; base victory points
+                  count  ;; number of cards with this name
+                  ])
 
 (def all-cards
+  ;; ^{:type "Map Card CardX"}
   (into {} (map (juxt :name identity))
         [; Production buildings
-         (->Card :indigo-plant :production 1 1 10)
-         (->Card :sugar-mill :production 2 1 8)
-         (->Card :tobacco-storage :production 3 2 8)
-         (->Card :coffee-roaster :production 4 2 8)
-         (->Card :silver-smelter :production 5 3 8)
-   ; Violet buildings
-         (->Card :smithy :violet 1 1 3)
-         (->Card :gold-mine :violet 1 1 3)
-         (->Card :archive :violet 1 1 3)
-         (->Card :poorhouse :violet 2 1 3)
-         (->Card :black-market :violet 2 1 3)
-         (->Card :trading-post :violet 2 1 3)
-         (->Card :market-stand :violet 2 1 3)
-         (->Card :well :violet 2 1 3)
-         (->Card :crane :violet 2 1 3)
-         (->Card :chapel :violet 3 2 3)
-         (->Card :tower :violet 3 2 3)
-         (->Card :aqueduct :violet 3 2 3)
-         (->Card :carpenter :violet 3 2 3)
-         (->Card :prefecture :violet 3 2 3)
-         (->Card :market-hall :violet 4 2 3)
-         (->Card :quarry :violet 4 2 3)
-         (->Card :library :violet 5 3 3)
-         (->Card :statue :violet 3 3 3)
-         (->Card :victory-column :violet 4 4 3)
-         (->Card :hero :violet 5 5 3)
-         (->Card :guild-hall :violet 6 0 2)
-         (->Card :city-hall :violet 6 0 2)
-         (->Card :triumphal-arch :violet 6 0 2)
-         (->Card :palace :violet 6 0 2)]))
+         (->CardX :indigo-plant :production 1 1 10)
+         (->CardX :sugar-mill :production 2 1 8)
+         (->CardX :tobacco-storage :production 3 2 8)
+         (->CardX :coffee-roaster :production 4 2 8)
+         (->CardX :silver-smelter :production 5 3 8)
+         ; Violet buildings
+         (->CardX :smithy :violet 1 1 3)
+         (->CardX :gold-mine :violet 1 1 3)
+         (->CardX :archive :violet 1 1 3)
+         (->CardX :poorhouse :violet 2 1 3)
+         (->CardX :black-market :violet 2 1 3)
+         (->CardX :trading-post :violet 2 1 3)
+         (->CardX :market-stand :violet 2 1 3)
+         (->CardX :well :violet 2 1 3)
+         (->CardX :crane :violet 2 1 3)
+         (->CardX :chapel :violet 3 2 3)
+         (->CardX :tower :violet 3 2 3)
+         (->CardX :aqueduct :violet 3 2 3)
+         (->CardX :carpenter :violet 3 2 3)
+         (->CardX :prefecture :violet 3 2 3)
+         (->CardX :market-hall :violet 4 2 3)
+         (->CardX :quarry :violet 4 2 3)
+         (->CardX :library :violet 5 3 3)
+         (->CardX :statue :violet 3 3 3)
+         (->CardX :victory-column :violet 4 4 3)
+         (->CardX :hero :violet 5 5 3)
+         (->CardX :guild-hall :violet 6 0 2)
+         (->CardX :city-hall :violet 6 0 2)
+         (->CardX :triumphal-arch :violet 6 0 2)
+         (->CardX :palace :violet 6 0 2)]))
 
 (defn extract-vals
   "Extract only the requested keys k from map m."
@@ -65,10 +68,10 @@
 
 ;;-----------------------
 ;; Default player state
-(defrecord Player [area    ;; played buildings :: [Card]
-                   hand    ;; hand cards :: [Card]
+(defrecord Player [area    ;; played buildings :: [CardX]
+                   hand    ;; hand cards :: [CardX]
                    goods   ;; produced goods but not yet traded :: [Integer]
-                   chapel  ;; chapel cards :: [Card]
+                   chapel  ;; chapel cards :: [CardX]
                    vp      ;; number of VPs :: Integer >= 0
                    ])
 
@@ -80,20 +83,20 @@
                 :vp 0}))
 
 (def all-roles
-  ;; :type Set Role
+  ;; ^{:type "Set Role"}
   "All available roles."
   #{:builder :producer :trader :councillor :prospector})
 
 ;;-----------------------
 ;; Define the game state
-(defrecord State [deck     ;; the deck of unused cards :: [Card]
-                  discards ;; discard pile :: [Card]
+(defrecord State [deck     ;; the deck of unused cards :: [CardX]
+                  discards ;; discard pile :: [CardX]
                   player   ;; player hand and their play area :: [Player]
                   turn     ;; current turn number :: Integer >= 0
                   roles    ;; available roles :: #{Role}
                   ])
 
-(defn nplayers 
+(defn nplayers
   "Number of players in the game."
   {:type "State -> Integer"}
   [state]
